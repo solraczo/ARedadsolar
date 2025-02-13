@@ -8,7 +8,7 @@ let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
-const animationSpeed = 0.5;
+const animationSpeed = 1;
 
 
 // Escena, cámara y renderizador
@@ -66,7 +66,7 @@ gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_1.gltf',
     (gltf) => {
         const model = gltf.scene;
-        model.scale.set(0.01, 0.01, 0.01);
+        model.scale.set(0.02, 0.02, 0.02);
         model.position.set(0, 0, 0);
         scene.add(model);
 
