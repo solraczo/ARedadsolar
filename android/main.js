@@ -66,7 +66,7 @@ gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/models/edadsolar_1.gltf',
     (gltf) => {
         const model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5);
+        model.scale.set(0.01, 0.01, 0.01);
         model.position.set(0, 0, 0);
         scene.add(model);
 
