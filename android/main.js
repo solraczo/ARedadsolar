@@ -8,7 +8,7 @@ let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
-const animationSpeed = 1;
+const animationSpeed = 0.99;
 
 
 // Escena, cámara y renderizador
