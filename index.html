@@ -11,15 +11,17 @@
       // Detectar Android
       if (/android/i.test(userAgent)) {
         window.location.href = "android/index.html"; // Redirige al proyecto Android
+        return; // Detiene la ejecución del código
       }
 
       // Detectar iOS
       if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
         window.location.href = "ios/index.html"; // Redirige al proyecto iOS
+        return; // Detiene la ejecución del código
       }
 
-      // Si no es Android ni iOS, muestra un mensaje
-      alert("Dispositivo no compatible");
+      // Si no es Android ni iOS, no hacer nada (o redirigir a una página de error)
+      // Puedes agregar un mensaje en la página en lugar de usar alert()
     }
 
     // Ejecutar la detección al cargar la página
