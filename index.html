@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto AR</title>
+  <script>
+    function detectarDispositivo() {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+      // Detectar Android
+      if (/android/i.test(userAgent)) {
+        window.location.href = "android/index.html"; // Redirige al proyecto Android
+      }
+
+      // Detectar iOS
+      if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        window.location.href = "ios/index.html"; // Redirige al proyecto iOS
+      }
+
+      // Si no es Android ni iOS, muestra un mensaje
+      alert("Dispositivo no compatible");
+    }
+
+    // Ejecutar la detección al cargar la página
+    window.onload = detectarDispositivo;
+  </script>
+</head>
+<body>
+  <h1>Redirigiendo a la versión correcta...</h1>
+</body>
+</html>
