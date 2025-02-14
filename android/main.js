@@ -141,12 +141,12 @@ let scaleFactor = 1;
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
 
-    // Actualizar el factor de mezcla de texturas
+    // Actualizar el factor de mezcla de texturas (más lento)
     if (increasing) {
-        mixFactor += 0.01;
+        mixFactor += 0.001; // Cambiado de 0.01 a 0.001 para una transición más lenta
         if (mixFactor >= 1.0) increasing = false;
     } else {
-        mixFactor -= 0.01;
+        mixFactor -= 0.001; // Cambiado de 0.01 a 0.001 para una transición más lenta
         if (mixFactor <= 0.0) increasing = true;
     }
 
