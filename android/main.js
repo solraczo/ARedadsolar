@@ -8,8 +8,8 @@ let actionsGLTF = {};
 let clock = new THREE.Clock();
 let model;
 let modelLoaded = false;
-const animationSpeed = 0.99;
-const animationDuration = 5000; // Duración en milisegundos (ajustar según la animación real)
+const animationSpeed = 0.5;
+const animationDuration = 7000; // Duración en milisegundos (ajustar según la animación real)
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
@@ -71,7 +71,7 @@ gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_1.gltf',
     (gltf) => {
         model = gltf.scene;
-        model.scale.set(0.02, 0.02, 0.02);
+        model.scale.set(0.01, 0.01, 0.01);
         model.traverse((child) => {
             if (child.isMesh) {
                 child.material = material;
@@ -106,16 +106,16 @@ function startAnimationLoop() {
 
 let mixFactor = 0;
 let increasing = true;
-let scaleFactor = 1;
+let scaleFactor = 0.5;
 
 renderer.setAnimationLoop((delta) => {
     if (!modelLoaded) return;
 
-    mixFactor += increasing ? 0.0015 : -0.0015;
+    mixFactor += increasing ? 0.0008 : -0.0008;
     if (mixFactor >= 1.0 || mixFactor <= 0.0) increasing = !increasing;
     material.uniforms.mixFactor.value = mixFactor;
 
-    scaleFactor = (scaleFactor + 0.01) % 5 || 1;
+    scaleFactor = (scaleFactor + 0.005) % 2 || 0.5;
     model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
     if (mixerGLTF) mixerGLTF.update(clock.getDelta() * animationSpeed);
