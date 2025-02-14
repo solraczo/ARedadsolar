@@ -99,10 +99,11 @@ const material = new THREE.ShaderMaterial({
 
 // Cargar el modelo GLTF
 const gltfLoader = new GLTFLoader();
+let model; // Variable para almacenar el modelo
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_1.gltf',
     (gltf) => {
-        const model = gltf.scene;
+        model = gltf.scene;
         model.scale.set(0.02, 0.02, 0.02);
         model.position.set(0, 0, 0);
 
@@ -137,16 +138,27 @@ let mixFactor = 0;
 let increasing = true;
 let scaleFactor = 1;
 
+// Función para reiniciar la animación
+function restartAnimation() {
+    // Reiniciar la escala y la textura
+    scaleFactor = 1;
+    mixFactor = 0;
+    increasing = true;
+
+    // Mostrar la esfera nuevamente
+    if (model) model.visible = true;
+}
+
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
 
     // Actualizar el factor de mezcla de texturas (más lento)
     if (increasing) {
-        mixFactor += 0.0015; // Cambiado de 0.01 a 0.001 para una transición más lenta
+        mixFactor += 0.0015; // Cambiado de 0.01 a 0.0015 para una transición más lenta
         if (mixFactor >= 1.0) increasing = false;
     } else {
-        mixFactor -= 0.0015; // Cambiado de 0.01 a 0.001 para una transición más lenta
+        mixFactor -= 0.0015; // Cambiado de 0.01 a 0.0015 para una transición más lenta
         if (mixFactor <= 0.0) increasing = true;
     }
 
@@ -155,15 +167,17 @@ renderer.setAnimationLoop((timestamp, frame) => {
 
     // Actualizar la escala de la esfera
     scaleFactor += 0.01;
-    if (scaleFactor > 5) scaleFactor = 1;
+    if (scaleFactor > 5) {
+        // Ocultar la esfera
+        if (model) model.visible = false;
+
+        // Reiniciar la animación después de un tiempo (en milisegundos)
+        setTimeout(restartAnimation, 2000); // 2000 ms = 2 segundos
+    }
 
     // Aplicar la escala al modelo
-    if (modelLoaded) {
-        scene.traverse((child) => {
-            if (child.isMesh) {
-                child.scale.set(scaleFactor, scaleFactor, scaleFactor);
-            }
-        });
+    if (modelLoaded && model.visible) {
+        model.scale.set(scaleFactor, scaleFactor, scaleFactor);
     }
 
     // Actualizar animaciones GLTF
