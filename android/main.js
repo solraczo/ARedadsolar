@@ -147,7 +147,7 @@ renderer.setAnimationLoop((timestamp, frame) => {
         if (mixFactor >= 1.0) increasing = false;
     } else {
         mixFactor -= 0.0015; // Cambiado de 0.01 a 0.001 para una transición más lenta
-        if (mixFactor <= 1.0) increasing = true;
+        if (mixFactor <= 0.0) increasing = true;
     }
 
     // Pasar el valor de mixFactor al shader
