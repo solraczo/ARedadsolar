@@ -143,10 +143,10 @@ renderer.setAnimationLoop((timestamp, frame) => {
 
     // Actualizar el factor de mezcla de texturas (más lento)
     if (increasing) {
-        mixFactor += 0.001; // Cambiado de 0.01 a 0.001 para una transición más lenta
+        mixFactor += 0.0015; // Cambiado de 0.01 a 0.001 para una transición más lenta
         if (mixFactor >= 1.0) increasing = false;
     } else {
-        mixFactor -= 0.001; // Cambiado de 0.01 a 0.001 para una transición más lenta
+        mixFactor -= 0.0015; // Cambiado de 0.01 a 0.001 para una transición más lenta
         if (mixFactor <= 0.0) increasing = true;
     }
 
@@ -155,11 +155,7 @@ renderer.setAnimationLoop((timestamp, frame) => {
 
     // Actualizar la escala de la esfera
     scaleFactor += 0.01;
-    if (scaleFactor > 5) {
-        scaleFactor = 1; // Reiniciar la escala
-        mixFactor = 0; // Reiniciar la animación de textura
-        increasing = true; // Reiniciar la dirección de la transición de textura
-    }
+    if (scaleFactor > 5) scaleFactor = 1;
 
     // Aplicar la escala al modelo
     if (modelLoaded) {
