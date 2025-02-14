@@ -3,13 +3,11 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.99;
-
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -60,7 +58,46 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF y activar todas sus animaciones en loop
+// Cargar las texturas
+const textureLoader = new THREE.TextureLoader();
+const texture1 = textureLoader.load('https://solraczo.github.io/ARedadsolar/android/models/2k_sun.jpg');
+const texture2 = textureLoader.load('https://solraczo.github.io/ARedadsolar/android/models/2k_sun-red.jpg');
+
+// Shader personalizado para mezclar texturas
+const vertexShader = `
+    varying vec2 vUv;
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+
+const fragmentShader = `
+    uniform sampler2D texture1;
+    uniform sampler2D texture2;
+    uniform float mixFactor;
+
+    varying vec2 vUv;
+
+    void main() {
+        vec4 color1 = texture2D(texture1, vUv);
+        vec4 color2 = texture2D(texture2, vUv);
+        gl_FragColor = mix(color1, color2, mixFactor);
+    }
+`;
+
+// Crear el material con el shader personalizado
+const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+        texture1: { value: texture1 },
+        texture2: { value: texture2 },
+        mixFactor: { value: 0.0 } // Factor de mezcla (0 = textura1, 1 = textura2)
+    }
+});
+
+// Cargar el modelo GLTF
 const gltfLoader = new GLTFLoader();
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_1.gltf',
@@ -68,6 +105,14 @@ gltfLoader.load(
         const model = gltf.scene;
         model.scale.set(0.02, 0.02, 0.02);
         model.position.set(0, 0, 0);
+
+        // Aplicar el material personalizado a la esfera
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = material;
+            }
+        });
+
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -87,9 +132,43 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
+// Variables para la animación de textura y escala
+let mixFactor = 0;
+let increasing = true;
+let scaleFactor = 1;
+
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
+
+    // Actualizar el factor de mezcla de texturas
+    if (increasing) {
+        mixFactor += 0.01;
+        if (mixFactor >= 1.0) increasing = false;
+    } else {
+        mixFactor -= 0.01;
+        if (mixFactor <= 0.0) increasing = true;
+    }
+
+    // Pasar el valor de mixFactor al shader
+    material.uniforms.mixFactor.value = mixFactor;
+
+    // Actualizar la escala de la esfera
+    scaleFactor += 0.01;
+    if (scaleFactor > 5) scaleFactor = 1;
+
+    // Aplicar la escala al modelo
+    if (modelLoaded) {
+        scene.traverse((child) => {
+            if (child.isMesh) {
+                child.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            }
+        });
+    }
+
+    // Actualizar animaciones GLTF
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
+
+    // Renderizar la escena
     renderer.render(scene, camera);
 });
