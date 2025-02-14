@@ -143,10 +143,10 @@ renderer.setAnimationLoop((timestamp, frame) => {
 
     // Actualizar el factor de mezcla de texturas (más lento)
     if (increasing) {
-        mixFactor += 0.002; // Cambiado de 0.01 a 0.002 para una transición más lenta
+        mixFactor += 0.005; // Cambiado de 0.01 a 0.005 para una transición más lenta
         if (mixFactor >= 1.0) increasing = false;
     } else {
-        mixFactor -= 0.002; // Cambiado de 0.01 a 0.002 para una transición más lenta
+        mixFactor -= 0.005; // Cambiado de 0.01 a 0.005 para una transición más lenta
         if (mixFactor <= 0.0) increasing = true;
     }
 
