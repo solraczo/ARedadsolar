@@ -3,10 +3,13 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-// Variables globales
+
 let mixerGLTF;
+let actionsGLTF = {};
 let clock = new THREE.Clock();
-const animationSpeed = 0.5;
+let modelLoaded = false;
+const animationSpeed = 1;
+
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -14,13 +17,13 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
-renderer.setClearColor(0x000000, 0); // Fondo transparente
+renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.5;
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
-// Verificar soporte de WebXR AR
+// Verificar soporte de WebXR
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
@@ -57,7 +60,7 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF y activar animaciones
+// Cargar el modelo GLTF y activar todas sus animaciones en loop
 const gltfLoader = new GLTFLoader();
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_6.gltf',
@@ -67,30 +70,26 @@ gltfLoader.load(
         model.position.set(0, 0, 0);
         scene.add(model);
 
-        // Configurar el mixer para las animaciones
         mixerGLTF = new THREE.AnimationMixer(model);
         gltf.animations.forEach((clip) => {
             const action = mixerGLTF.clipAction(clip);
-            action.setLoop(THREE.LoopRepeat); // Repetir en bucle
+            action.setLoop(THREE.LoopRepeat);
             action.clampWhenFinished = false;
-            action.timeScale = animationSpeed; // Velocidad de la animación
+            action.timeScale = animationSpeed;
             action.play();
+            actionsGLTF[clip.name] = action;
         });
 
-        console.log('Modelo GLTF cargado y animaciones activadas.');
+        modelLoaded = true;
+        console.log('Animaciones GLTF disponibles y activadas en loop:', Object.keys(actionsGLTF));
     },
-    (xhr) => console.log((xhr.loaded / xhr.total) * 100 + '% cargado'),
+    (xhr) => console.log('GLTF loaded:', (xhr.loaded / xhr.total) * 100 + '%'),
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
-// Función de animación
-const animate = () => {
-    if (mixerGLTF) {
-        const delta = clock.getDelta();
-        mixerGLTF.update(delta * animationSpeed); // Actualizar animaciones
-    }
+// Animar cada frame
+renderer.setAnimationLoop((timestamp, frame) => {
+    const delta = clock.getDelta();
+    if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
     renderer.render(scene, camera);
-};
-
-// Configurar el bucle de renderizado para WebXR
-renderer.setAnimationLoop(animate);
+});
