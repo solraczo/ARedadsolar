@@ -3,11 +3,13 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
+
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
-const animationSpeed = 0.99;
+const animationSpeed = 0.5;
+
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -47,7 +49,7 @@ scene.add(ambientLight);
 // Cargar HDRI como entorno
 const rgbeLoader = new RGBELoader();
 rgbeLoader.load(
-    'https://solraczo.github.io/solarandroid/models/brown_photostudio_02_2k.hdr',
+    'https://solraczo.github.io/ARedadsolar/models/brown_photostudio_02_2k.hdr',
     (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
@@ -58,62 +60,14 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar las texturas
-const textureLoader = new THREE.TextureLoader();
-const texture1 = textureLoader.load('https://solraczo.github.io/ARedadsolar/android/models/2k_sun.jpg');
-const texture2 = textureLoader.load('https://solraczo.github.io/ARedadsolar/android/models/2k_sun-red.jpg');
-
-// Shader personalizado para mezclar texturas
-const vertexShader = `
-    varying vec2 vUv;
-    void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-`;
-
-const fragmentShader = `
-    uniform sampler2D texture1;
-    uniform sampler2D texture2;
-    uniform float mixFactor;
-
-    varying vec2 vUv;
-
-    void main() {
-        vec4 color1 = texture2D(texture1, vUv);
-        vec4 color2 = texture2D(texture2, vUv);
-        gl_FragColor = mix(color1, color2, mixFactor);
-    }
-`;
-
-// Crear el material con el shader personalizado
-const material = new THREE.ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
-    uniforms: {
-        texture1: { value: texture1 },
-        texture2: { value: texture2 },
-        mixFactor: { value: 0.0 } // Factor de mezcla (0 = textura1, 1 = textura2)
-    }
-});
-
-// Cargar el modelo GLTF
+// Cargar el modelo GLTF y activar todas sus animaciones en loop
 const gltfLoader = new GLTFLoader();
-let model; // Variable para almacenar el modelo
 gltfLoader.load(
-    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_1.gltf',
+    'https://solraczo.github.io/ARedadsolar/models/edadsolar_2.gltf',
     (gltf) => {
-        model = gltf.scene;
-        model.scale.set(0.02, 0.02, 0.02);
+        const model = gltf.scene;
+        model.scale.set(0.1, 0.1, 0.1);
         model.position.set(0, 0, 0);
-
-        // Aplicar el material personalizado a la esfera
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = material;
-            }
-        });
-
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -133,61 +87,9 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
-// Variables para la animación de textura y escala
-let mixFactor = 0;
-let increasing = true;
-let scaleFactor = 1;
-let isModelVisible = true; // Controlar la visibilidad del modelo
-
-// Función para reiniciar la animación
-function restartAnimation() {
-    // Reiniciar la escala y la textura
-    scaleFactor = 1;
-    mixFactor = 0;
-    increasing = true;
-
-    // Mostrar la esfera nuevamente
-    isModelVisible = true;
-    if (model) model.visible = true;
-}
-
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
-
-    // Actualizar el factor de mezcla de texturas (más lento)
-    if (increasing) {
-        mixFactor += 0.0015; // Cambiado de 0.01 a 0.0015 para una transición más lenta
-        if (mixFactor >= 1.0) increasing = false;
-    } else {
-        mixFactor -= 0.0015; // Cambiado de 0.01 a 0.0015 para una transición más lenta
-        if (mixFactor <= 0.0) increasing = true;
-    }
-
-    // Pasar el valor de mixFactor al shader
-    material.uniforms.mixFactor.value = mixFactor;
-
-    // Actualizar la escala de la esfera
-    if (isModelVisible) {
-        scaleFactor += 0.01;
-        if (scaleFactor > 5) {
-            // Ocultar la esfera
-            isModelVisible = false;
-            if (model) model.visible = false;
-
-            // Reiniciar la animación después de un tiempo (en milisegundos)
-            setTimeout(restartAnimation, 2000); // 2000 ms = 2 segundos
-        }
-    }
-
-    // Aplicar la escala al modelo
-    if (modelLoaded && isModelVisible) {
-        model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-    }
-
-    // Actualizar animaciones GLTF
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
-
-    // Renderizar la escena
     renderer.render(scene, camera);
 });
