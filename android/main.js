@@ -49,7 +49,7 @@ scene.add(ambientLight);
 // Cargar HDRI como entorno
 const rgbeLoader = new RGBELoader();
 rgbeLoader.load(
-    'https://solraczo.github.io/ARedadsolar/models/brown_photostudio_02_2k.hdr',
+    'https://solraczo.github.io/solarandroid/models/brown_photostudio_02_2k.hdr',
     (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
