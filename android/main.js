@@ -3,93 +3,106 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
-let mixerGLTF;
-let actionsGLTF = {};
+let mixerGLTF, model, hitTestSource = null, hitTestSourceRequested = false;
+let reticle;
 let clock = new THREE.Clock();
-let modelLoaded = false;
-const animationSpeed = 0.75;
-
-
-// Escena, cámara y renderizador
+const animationSpeed = 0.5;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 renderer.setClearColor(0x000000, 0);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.5;
-renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
-// Verificar soporte de WebXR
-if ('xr' in navigator) {
-    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-        if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-        } else {
-            alert('WebXR AR no es soportado en este dispositivo.');
-        }
-    }).catch((error) => {
-        console.error('Error al verificar soporte de WebXR AR:', error);
-    });
-} else {
-    alert('WebXR no está disponible en este navegador.');
-}
+// Botón AR
+document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
 // Iluminación
 const light = new THREE.PointLight(0xffffff, 0.2);
 light.position.set(0, 0.2, 0.2);
 scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
+// Cargar HDRI
+new RGBELoader().load('https://solraczo.github.io/solarandroid/models/brown_photostudio_02_2k.hdr', (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+    scene.background = null;
+});
 
-// Cargar HDRI como entorno
-const rgbeLoader = new RGBELoader();
-rgbeLoader.load(
-    'https://solraczo.github.io/solarandroid/models/brown_photostudio_02_2k.hdr',
-    (texture) => {
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        scene.environment = texture;
-        scene.background = null;
-        console.log('HDRI cargado correctamente.');
-    },
-    undefined,
-    (error) => console.error('Error al cargar el HDRI:', error)
-);
-
-// Cargar el modelo GLTF y activar todas sus animaciones en loop
+// Cargar el modelo GLTF
 const gltfLoader = new GLTFLoader();
-gltfLoader.load(
-    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
-    (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(1, 1, 1);
-        model.position.set(0, 0, 0);
-        scene.add(model);
+gltfLoader.load('https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf', (gltf) => {
+    model = gltf.scene;
+    model.scale.set(0.5, 0.5, 0.5);
+    model.visible = false;
+    scene.add(model);
 
-        mixerGLTF = new THREE.AnimationMixer(model);
-        gltf.animations.forEach((clip) => {
-            const action = mixerGLTF.clipAction(clip);
-            action.setLoop(THREE.LoopRepeat);
-            action.clampWhenFinished = false;
-            action.timeScale = animationSpeed;
-            action.play();
-            actionsGLTF[clip.name] = action;
+    // Animaciones
+    mixerGLTF = new THREE.AnimationMixer(model);
+    gltf.animations.forEach((clip) => {
+        const action = mixerGLTF.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat);
+        action.timeScale = animationSpeed;
+        action.play();
+    });
+});
+
+// Retículo para mostrar la superficie detectada
+const reticleGeometry = new THREE.RingGeometry(0.1, 0.15, 32);
+reticleGeometry.rotateX(-Math.PI / 2);
+const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
+reticle.visible = false;
+scene.add(reticle);
+
+// Detectar el hit test en la sesión AR
+renderer.xr.addEventListener('sessionstart', () => {
+    const session = renderer.xr.getSession();
+    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+            hitTestSource = source;
         });
+    });
 
-        modelLoaded = true;
-        console.log('Animaciones GLTF disponibles y activadas en loop:', Object.keys(actionsGLTF));
-    },
-    (xhr) => console.log('GLTF loaded:', (xhr.loaded / xhr.total) * 100 + '%'),
-    (error) => console.error('Error al cargar el modelo GLTF:', error)
-);
+    session.addEventListener('end', () => {
+        hitTestSourceRequested = false;
+        hitTestSource = null;
+        reticle.visible = false;
+    });
 
-// Animar cada frame
+    hitTestSourceRequested = true;
+});
+
+// Colocar el modelo en la superficie detectada al tocar la pantalla
+window.addEventListener('click', () => {
+    if (reticle.visible && model) {
+        model.position.set(reticle.position.x, reticle.position.y, reticle.position.z);
+        model.visible = true;
+    }
+});
+
+// Animación y hit testing en cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
+
+    const session = renderer.xr.getSession();
+    if (session && hitTestSource) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        session.requestAnimationFrame((time, frame) => {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length > 0) {
+                const hit = hitTestResults[0];
+                const pose = hit.getPose(referenceSpace);
+                reticle.visible = true;
+                reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+            } else {
+                reticle.visible = false;
+            }
+        });
+    }
+
     renderer.render(scene, camera);
-})
+});
