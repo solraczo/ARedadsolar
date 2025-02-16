@@ -3,13 +3,11 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.5;
-
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -60,14 +58,17 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF y activar todas sus animaciones en loop
+// Cargar el modelo GLTF
 const gltfLoader = new GLTFLoader();
+let model; // Variable para almacenar el modelo cargado
+
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
-        const model = gltf.scene;
+        model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
+        model.visible = false; // Ocultar el modelo hasta que se encuentre una superficie
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -87,8 +88,47 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
+// Configurar hit-test para detectar superficies
+let hitTestSource = null;
+let hitTestSourceRequested = false;
+
+renderer.xr.addEventListener('sessionstart', (event) => {
+    const session = renderer.xr.getSession();
+
+    session.addEventListener('select', (event) => {
+        if (modelLoaded && model) {
+            model.visible = true; // Mostrar el modelo cuando se selecciona una superficie
+        }
+    });
+
+    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+            hitTestSource = source;
+        });
+    });
+
+    hitTestSourceRequested = true;
+});
+
+renderer.xr.addEventListener('sessionend', () => {
+    hitTestSource = null;
+    hitTestSourceRequested = false;
+});
+
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
+    if (frame) {
+        if (hitTestSource && modelLoaded && model) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length > 0) {
+                const hit = hitTestResults[0];
+                const pose = hit.getPose(renderer.xr.getReferenceSpace());
+                model.position.setFromMatrixPosition(pose.transform.matrix);
+                model.quaternion.setFromRotationMatrix(pose.transform.matrix);
+            }
+        }
+    }
+
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
     renderer.render(scene, camera);
