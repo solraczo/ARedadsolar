@@ -91,6 +91,7 @@ gltfLoader.load(
 // Configurar hit-test para detectar superficies
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+let referenceSpace = null;
 
 renderer.xr.addEventListener('sessionstart', (event) => {
     const session = renderer.xr.getSession();
@@ -101,7 +102,8 @@ renderer.xr.addEventListener('sessionstart', (event) => {
         }
     });
 
-    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+    session.requestReferenceSpace('viewer').then((space) => {
+        referenceSpace = space;
         session.requestHitTestSource({ space: referenceSpace }).then((source) => {
             hitTestSource = source;
         });
@@ -113,16 +115,17 @@ renderer.xr.addEventListener('sessionstart', (event) => {
 renderer.xr.addEventListener('sessionend', () => {
     hitTestSource = null;
     hitTestSourceRequested = false;
+    referenceSpace = null;
 });
 
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame) {
-        if (hitTestSource && modelLoaded && model) {
-            const hitTestResults = frame.getHitTestResults(hitTestSource);
-            if (hitTestResults.length > 0) {
-                const hit = hitTestResults[0];
-                const pose = hit.getPose(renderer.xr.getReferenceSpace());
+    if (frame && hitTestSource && modelLoaded && model) {
+        const hitTestResults = frame.getHitTestResults(hitTestSource);
+        if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(referenceSpace);
+            if (pose) {
                 model.position.setFromMatrixPosition(pose.transform.matrix);
                 model.quaternion.setFromRotationMatrix(pose.transform.matrix);
             }
