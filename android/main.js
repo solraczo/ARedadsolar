@@ -5,7 +5,7 @@ import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoa
 
 let mixerGLTF, model, hitTestSource = null, hitTestSourceRequested = false;
 let reticle;
-let modelPlaced = false; // Para bloquear futuras interacciones
+let modelPlaced = false; // 🔥 Controla que el modelo solo se coloque una vez
 let clock = new THREE.Clock();
 const animationSpeed = 0.75;
 const scene = new THREE.Scene();
@@ -62,6 +62,7 @@ scene.add(reticle);
 
 // Detectar el hit test en la sesión AR
 renderer.xr.addEventListener('sessionstart', () => {
+    hitTestSourceRequested = true;
     const session = renderer.xr.getSession();
     session.requestReferenceSpace('viewer').then((referenceSpace) => {
         session.requestHitTestSource({ space: referenceSpace }).then((source) => {
@@ -74,37 +75,38 @@ renderer.xr.addEventListener('sessionstart', () => {
         hitTestSource = null;
         reticle.visible = false;
     });
-
-    hitTestSourceRequested = true;
 });
 
-// Colocar el modelo una vez y detener el hit testing
+// Colocar el modelo en la superficie detectada al tocar la pantalla (SOLO UNA VEZ)
 window.addEventListener('click', () => {
     if (!modelPlaced && reticle.visible && model) {
-        model.position.copy(reticle.position);
+        model.position.set(reticle.position.x, reticle.position.y, reticle.position.z);
         model.visible = true;
-        modelPlaced = true;
-        reticle.visible = false; // ✅ Ocultar el retículo permanentemente
-        hitTestSource = null; // ✅ Detener hit testing
+        modelPlaced = true; // 🔥 Bloquear futuros movimientos
+        reticle.visible = false; // 🔥 Ocultar el retículo
+
+        // 🔥 Desactivar el hit test después de colocar el modelo
+        hitTestSourceRequested = false;
+        hitTestSource = null;
+
         console.log("📌 Modelo colocado en:", model.position);
     }
 });
 
-// Animación y hit testing
+// Animación y hit testing en cada frame
 renderer.setAnimationLoop(() => {
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
 
-    if (!modelPlaced && hitTestSource) {
+    if (!modelPlaced && renderer.xr.getSession() && hitTestSource) {
         const referenceSpace = renderer.xr.getReferenceSpace();
-        const session = renderer.xr.getSession();
-        session.requestAnimationFrame((_, frame) => {
+        renderer.xr.getSession().requestAnimationFrame((_, frame) => {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
             if (hitTestResults.length > 0) {
                 const hit = hitTestResults[0];
                 const pose = hit.getPose(referenceSpace);
                 reticle.visible = true;
-                reticle.position.copy(pose.transform.position);
+                reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
             } else {
                 reticle.visible = false;
             }
