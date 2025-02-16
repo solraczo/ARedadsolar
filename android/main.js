@@ -25,9 +25,11 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, {
-                requiredFeatures: ['image-tracking'], // Habilitar image tracking
-            }));
+            // Crear el botón AR
+            const arButton = ARButton.createButton(renderer, {
+                requiredFeatures: ['local'], // Usar 'local' para AR básico
+            });
+            document.body.appendChild(arButton);
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -90,48 +92,19 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
-// Configurar image tracking
-let imageTrackingEnabled = false;
-let imageTarget = null;
-
-renderer.xr.addEventListener('sessionstart', async (event) => {
-    const session = renderer.xr.getSession();
-
-    // Cargar la imagen de referencia
-    const image = new Image();
-    image.src = 'https://solraczo.github.io/ARedadsolar/android/models/refe.jpg'; // Ruta a la imagen de referencia
-    await image.decode();
-
-    // Crear un ImageTarget para el seguimiento
-    const imageTarget = await session.findImageTarget(image);
-    if (imageTarget) {
-        console.log('Imagen de referencia detectada:', imageTarget);
-        imageTrackingEnabled = true;
-    } else {
-        console.error('No se pudo cargar la imagen de referencia.');
-    }
+// Configurar la sesión AR
+renderer.xr.addEventListener('sessionstart', () => {
+    console.log('Sesión AR iniciada');
+    // Aquí puedes agregar lógica adicional al iniciar la sesión AR
 });
 
 renderer.xr.addEventListener('sessionend', () => {
-    imageTrackingEnabled = false;
-    imageTarget = null;
+    console.log('Sesión AR finalizada');
+    // Aquí puedes agregar lógica adicional al finalizar la sesión AR
 });
 
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame && imageTrackingEnabled && modelLoaded && model) {
-        const trackedImages = frame.getTrackedImageResults();
-        if (trackedImages.length > 0) {
-            const trackedImage = trackedImages[0];
-            const pose = trackedImage.getPose(renderer.xr.getReferenceSpace());
-            if (pose) {
-                model.visible = true; // Mostrar el modelo cuando se detecta la imagen
-                model.position.setFromMatrixPosition(pose.transform.matrix);
-                model.quaternion.setFromRotationMatrix(pose.transform.matrix);
-            }
-        }
-    }
-
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
     renderer.render(scene, camera);
