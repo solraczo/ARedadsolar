@@ -19,7 +19,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1;
+renderer.toneMappingExposure = 0.5;
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
@@ -39,11 +39,11 @@ if ('xr' in navigator) {
 }
 
 // Iluminación
-const light = new THREE.PointLight(0xffffff, 0.1);
-light.position.set(0, 0.08, 0.1);
+const light = new THREE.PointLight(0xffffff, 0.2);
+light.position.set(0, 0.2, 0.2);
 scene.add(light);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
 // Cargar HDRI como entorno
