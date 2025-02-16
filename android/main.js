@@ -3,11 +3,13 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
+
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.5;
+
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -25,11 +27,7 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            // Crear el botón AR
-            const arButton = ARButton.createButton(renderer, {
-                requiredFeatures: ['local'], // Usar 'local' para AR básico
-            });
-            document.body.appendChild(arButton);
+            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -62,17 +60,14 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF
+// Cargar el modelo GLTF y activar todas sus animaciones en loop
 const gltfLoader = new GLTFLoader();
-let model; // Variable para almacenar el modelo cargado
-
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
-        model = gltf.scene;
+        const model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
-        model.visible = false; // Ocultar el modelo hasta que se detecte la imagen
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -92,20 +87,9 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
-// Configurar la sesión AR
-renderer.xr.addEventListener('sessionstart', () => {
-    console.log('Sesión AR iniciada');
-    // Aquí puedes agregar lógica adicional al iniciar la sesión AR
-});
-
-renderer.xr.addEventListener('sessionend', () => {
-    console.log('Sesión AR finalizada');
-    // Aquí puedes agregar lógica adicional al finalizar la sesión AR
-});
-
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
     renderer.render(scene, camera);
-});
+})
