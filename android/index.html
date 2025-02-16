@@ -1,17 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-    </style>
+    <title>WebAR con Imagen de Referencia</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
 </head>
-<body>
-    <script type="module" src="https://solraczo.github.io/ARedadsolar/android/main.js"></script>
+<body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam;">
+        <!-- Definir la imagen de referencia -->
+        <a-nft type="nft" url="https://solraczo.github.io/ARedadsolar/android/models/refe.jpg">
+            <!-- Modelo 3D -->
+            <a-entity 
+                gltf-model="https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf"
+                position="0 0 0"
+                scale="0.5 0.5 0.5"
+                animation-mixer>
+            </a-entity>
+        </a-nft>
+        
+        <!-- Cámara AR -->
+        <a-entity camera></a-entity>
+    </a-scene>
 </body>
 </html>
