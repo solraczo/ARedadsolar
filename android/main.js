@@ -5,6 +5,7 @@ import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoa
 
 let mixerGLTF, model, hitTestSource = null, hitTestSourceRequested = false;
 let reticle;
+let modelPlaced = false; // 🔥 Para asegurar que el usuario solo coloque el modelo una vez
 let clock = new THREE.Clock();
 const animationSpeed = 0.75;
 const scene = new THREE.Scene();
@@ -35,7 +36,7 @@ new RGBELoader().load('https://solraczo.github.io/solarandroid/models/brown_phot
 const gltfLoader = new GLTFLoader();
 gltfLoader.load('https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf', (gltf) => {
     model = gltf.scene;
-    model.scale.set(0.5, 0.5, 0.5);
+    model.scale.set(1, 1, 1);
     model.visible = false;
     scene.add(model);
 
@@ -48,20 +49,20 @@ gltfLoader.load('https://solraczo.github.io/ARedadsolar/android/models/edadsolar
         action.play();
     });
 
-    // 🔥 Ocultar el retículo cuando el modelo se carga
-    reticle.visible = false;
+    console.log("✅ Modelo 3D cargado correctamente.");
 });
 
 // Retículo más pequeño y más tenue
-const reticleGeometry = new THREE.RingGeometry(0.05, 0.08, 32); // Más pequeño
+const reticleGeometry = new THREE.RingGeometry(0.05, 0.08, 32);
 reticleGeometry.rotateX(-Math.PI / 2);
-const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true }); // Más tenue
+const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true });
 reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
 reticle.visible = false;
 scene.add(reticle);
 
 // Detectar el hit test en la sesión AR
 renderer.xr.addEventListener('sessionstart', () => {
+    hitTestSourceRequested = true;
     const session = renderer.xr.getSession();
     session.requestReferenceSpace('viewer').then((referenceSpace) => {
         session.requestHitTestSource({ space: referenceSpace }).then((source) => {
@@ -74,28 +75,27 @@ renderer.xr.addEventListener('sessionstart', () => {
         hitTestSource = null;
         reticle.visible = false;
     });
-
-    hitTestSourceRequested = true;
 });
 
-// Colocar el modelo en la superficie detectada al tocar la pantalla
+// Colocar el modelo en la superficie detectada al tocar la pantalla (SOLO UNA VEZ)
 window.addEventListener('click', () => {
-    if (reticle.visible && model) {
+    if (!modelPlaced && reticle.visible && model) {
         model.position.set(reticle.position.x, reticle.position.y, reticle.position.z);
         model.visible = true;
-        reticle.visible = false; // 🔥 Ocultar el retículo después de colocar el modelo
+        modelPlaced = true; // 🔥 Bloquear futuros movimientos
+        reticle.visible = false; // 🔥 Ocultar retículo completamente
+        console.log("📌 Modelo colocado en:", model.position);
     }
 });
 
 // Animación y hit testing en cada frame
-renderer.setAnimationLoop((timestamp, frame) => {
+renderer.setAnimationLoop(() => {
     const delta = clock.getDelta();
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
 
-    const session = renderer.xr.getSession();
-    if (session && hitTestSource) {
+    if (!modelPlaced && renderer.xr.getSession() && hitTestSource) {
         const referenceSpace = renderer.xr.getReferenceSpace();
-        session.requestAnimationFrame((time, frame) => {
+        renderer.xr.getSession().requestAnimationFrame((_, frame) => {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
             if (hitTestResults.length > 0) {
                 const hit = hitTestResults[0];
