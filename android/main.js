@@ -25,7 +25,9 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+            document.body.appendChild(ARButton.createButton(renderer, {
+                requiredFeatures: ['image-tracking'], // Habilitar image tracking
+            }));
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -68,7 +70,7 @@ gltfLoader.load(
         model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
-        model.visible = false; // Ocultar el modelo hasta que se encuentre una superficie
+        model.visible = false; // Ocultar el modelo hasta que se detecte la imagen
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -88,44 +90,42 @@ gltfLoader.load(
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
 
-// Configurar hit-test para detectar superficies
-let hitTestSource = null;
-let hitTestSourceRequested = false;
-let referenceSpace = null;
+// Configurar image tracking
+let imageTrackingEnabled = false;
+let imageTarget = null;
 
-renderer.xr.addEventListener('sessionstart', (event) => {
+renderer.xr.addEventListener('sessionstart', async (event) => {
     const session = renderer.xr.getSession();
 
-    session.addEventListener('select', (event) => {
-        if (modelLoaded && model) {
-            model.visible = true; // Mostrar el modelo cuando se selecciona una superficie
-        }
-    });
+    // Cargar la imagen de referencia
+    const image = new Image();
+    image.src = 'https://solraczo.github.io/solarandroid/models/refe.jpg'; // Ruta a la imagen de referencia
+    await image.decode();
 
-    session.requestReferenceSpace('viewer').then((space) => {
-        referenceSpace = space;
-        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-            hitTestSource = source;
-        });
-    });
-
-    hitTestSourceRequested = true;
+    // Crear un ImageTarget para el seguimiento
+    const imageTarget = await session.findImageTarget(image);
+    if (imageTarget) {
+        console.log('Imagen de referencia detectada:', imageTarget);
+        imageTrackingEnabled = true;
+    } else {
+        console.error('No se pudo cargar la imagen de referencia.');
+    }
 });
 
 renderer.xr.addEventListener('sessionend', () => {
-    hitTestSource = null;
-    hitTestSourceRequested = false;
-    referenceSpace = null;
+    imageTrackingEnabled = false;
+    imageTarget = null;
 });
 
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame && hitTestSource && modelLoaded && model) {
-        const hitTestResults = frame.getHitTestResults(hitTestSource);
-        if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(referenceSpace);
+    if (frame && imageTrackingEnabled && modelLoaded && model) {
+        const trackedImages = frame.getTrackedImageResults();
+        if (trackedImages.length > 0) {
+            const trackedImage = trackedImages[0];
+            const pose = trackedImage.getPose(renderer.xr.getReferenceSpace());
             if (pose) {
+                model.visible = true; // Mostrar el modelo cuando se detecta la imagen
                 model.position.setFromMatrixPosition(pose.transform.matrix);
                 model.quaternion.setFromRotationMatrix(pose.transform.matrix);
             }
