@@ -99,7 +99,7 @@ renderer.xr.addEventListener('sessionstart', async (event) => {
 
     // Cargar la imagen de referencia
     const image = new Image();
-    image.src = 'https://solraczo.github.io/solarandroid/models/refe.jpg'; // Ruta a la imagen de referencia
+    image.src = 'https://solraczo.github.io/ARedadsolar/android/models/refe.jpg'; // Ruta a la imagen de referencia
     await image.decode();
 
     // Crear un ImageTarget para el seguimiento
