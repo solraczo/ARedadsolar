@@ -8,18 +8,24 @@
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam;">
-        <!-- Definir la imagen de referencia -->
-        <a-nft type="nft" url="https://solraczo.github.io/ARedadsolar/android/models/refe.jpg">
-            <!-- Modelo 3D -->
+    <a-scene 
+        embedded
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true;"
+        device-orientation-permission-ui="enabled: false">
+
+        <!-- Imagen de referencia -->
+        <a-nft id="marker" type="nft" url="https://solraczo.github.io/ARedadsolar/android/models/refe.jpg">
             <a-entity 
+                id="modelo"
                 gltf-model="https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf"
                 position="0 0 0"
                 scale="0.5 0.5 0.5"
                 animation-mixer>
             </a-entity>
         </a-nft>
-        
+
         <!-- Cámara AR -->
         <a-entity camera></a-entity>
     </a-scene>
