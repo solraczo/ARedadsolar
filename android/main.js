@@ -6,7 +6,7 @@ import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoa
 let mixerGLTF, model, hitTestSource = null, hitTestSourceRequested = false;
 let reticle;
 let clock = new THREE.Clock();
-const animationSpeed = 0.5;
+const animationSpeed = 0.75;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -47,12 +47,15 @@ gltfLoader.load('https://solraczo.github.io/ARedadsolar/android/models/edadsolar
         action.timeScale = animationSpeed;
         action.play();
     });
+
+    // 🔥 Ocultar el retículo cuando el modelo se carga
+    reticle.visible = false;
 });
 
-// Retículo para mostrar la superficie detectada
-const reticleGeometry = new THREE.RingGeometry(0.1, 0.15, 32);
+// Retículo más pequeño y más tenue
+const reticleGeometry = new THREE.RingGeometry(0.05, 0.08, 32); // Más pequeño
 reticleGeometry.rotateX(-Math.PI / 2);
-const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true }); // Más tenue
 reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
 reticle.visible = false;
 scene.add(reticle);
@@ -80,6 +83,7 @@ window.addEventListener('click', () => {
     if (reticle.visible && model) {
         model.position.set(reticle.position.x, reticle.position.y, reticle.position.z);
         model.visible = true;
+        reticle.visible = false; // 🔥 Ocultar el retículo después de colocar el modelo
     }
 });
 
