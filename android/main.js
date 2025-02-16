@@ -8,7 +8,7 @@ let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
-const animationSpeed = 1;
+const animationSpeed = 0.5;
 
 
 // Escena, cámara y renderizador
@@ -19,7 +19,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5;
+renderer.toneMappingExposure = 1;
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
@@ -39,7 +39,7 @@ if ('xr' in navigator) {
 }
 
 // Iluminación
-const light = new THREE.PointLight(0xffffff, 0.15);
+const light = new THREE.PointLight(0xffffff, 0.1);
 light.position.set(0, 0.08, 0.1);
 scene.add(light);
 
