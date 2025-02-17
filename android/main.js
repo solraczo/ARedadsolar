@@ -76,6 +76,7 @@ if ('xr' in navigator) {
         if (supported) {
             const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
             document.body.appendChild(arButton);
+            console.log("Botón AR agregado");
 
             arButton.addEventListener('sessionstart', () => {
                 console.log("Sesión AR iniciada, agregando el modelo a la escena.");
