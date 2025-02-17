@@ -3,13 +3,11 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.75;
-
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -27,7 +25,17 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+            document.body.appendChild(arButton);
+
+            // Detectar el inicio de la sesión de AR
+            arButton.addEventListener('click', () => {
+                renderer.xr.addEventListener('sessionstart', () => {
+                    if (model) {
+                        model.visible = true;
+                    }
+                });
+            });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -62,12 +70,14 @@ rgbeLoader.load(
 
 // Cargar el modelo GLTF y activar todas sus animaciones en loop
 const gltfLoader = new GLTFLoader();
+let model;
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
-        const model = gltf.scene;
+        model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
+        model.visible = false; // Ocultar el modelo inicialmente
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
