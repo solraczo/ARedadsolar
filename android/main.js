@@ -3,13 +3,23 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.75;
 
+// Crear una imagen inicial antes de iniciar AR
+const arIntro = document.createElement("img");
+arIntro.src = "https://solraczo.github.io/ARedadsolar/android/models/refe.jpg"; // Ruta de la imagen
+arIntro.style.position = "absolute";
+arIntro.style.top = "0";
+arIntro.style.left = "0";
+arIntro.style.width = "100vw";
+arIntro.style.height = "100vh";
+arIntro.style.objectFit = "cover";
+arIntro.style.zIndex = "10"; // Para que esté sobre el canvas
+document.body.appendChild(arIntro);
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -24,10 +34,15 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
 // Verificar soporte de WebXR
-if ('xr' in navigator) {
+tif ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+            document.body.appendChild(arButton);
+            
+            arButton.addEventListener("click", () => {
+                arIntro.style.display = "none"; // Ocultar la imagen al iniciar AR
+            });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
