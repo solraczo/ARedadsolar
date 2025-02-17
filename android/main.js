@@ -34,6 +34,13 @@ if ('xr' in navigator) {
                     model.visible = true;
                 }
             });
+
+            // Detectar el final de la sesión de AR
+            renderer.xr.addEventListener('sessionend', () => {
+                if (model) {
+                    model.visible = false;
+                }
+            });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
