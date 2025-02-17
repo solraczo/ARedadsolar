@@ -3,13 +3,11 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
-
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.75;
-
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -27,7 +25,30 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+            document.body.appendChild(arButton);
+
+            // Escuchar el evento de inicio de sesión AR
+            renderer.xr.addEventListener('sessionstart', () => {
+                if (modelLoaded) {
+                    scene.traverse((child) => {
+                        if (child.isMesh) {
+                            child.visible = true;
+                        }
+                    });
+                }
+            });
+
+            // Escuchar el evento de fin de sesión AR
+            renderer.xr.addEventListener('sessionend', () => {
+                if (modelLoaded) {
+                    scene.traverse((child) => {
+                        if (child.isMesh) {
+                            child.visible = false;
+                        }
+                    });
+                }
+            });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -68,6 +89,7 @@ gltfLoader.load(
         const model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
+        model.visible = false; // Hacer el modelo invisible inicialmente
         scene.add(model);
 
         mixerGLTF = new THREE.AnimationMixer(model);
@@ -93,4 +115,3 @@ renderer.setAnimationLoop((timestamp, frame) => {
     if (mixerGLTF) mixerGLTF.update(delta * animationSpeed);
     renderer.render(scene, camera);
 });
-
