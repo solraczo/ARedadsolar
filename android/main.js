@@ -9,7 +9,7 @@ let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.75;
-
+let loadedModel = null; // Variable para almacenar el modelo cargado
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -28,6 +28,12 @@ if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
             document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+            renderer.xr.addEventListener('sessionstart', () => {
+                if (loadedModel) {
+                    scene.add(loadedModel);
+                    Object.values(actionsGLTF).forEach(action => action.play());
+                }
+            });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
         }
@@ -60,23 +66,21 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF y activar todas sus animaciones en loop
+// Cargar el modelo GLTF
 const gltfLoader = new GLTFLoader();
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5);
-        model.position.set(0, 0, 0);
-        scene.add(model);
-
-        mixerGLTF = new THREE.AnimationMixer(model);
+        loadedModel = gltf.scene;
+        loadedModel.scale.set(0.5, 0.5, 0.5);
+        loadedModel.position.set(0, 0, 0);
+        
+        mixerGLTF = new THREE.AnimationMixer(loadedModel);
         gltf.animations.forEach((clip) => {
             const action = mixerGLTF.clipAction(clip);
             action.setLoop(THREE.LoopRepeat);
             action.clampWhenFinished = false;
             action.timeScale = animationSpeed;
-            action.play();
             actionsGLTF[clip.name] = action;
         });
 
