@@ -3,12 +3,13 @@ import { ARButton } from 'https://solraczo.github.io/solarandroid/libs/ARButton.
 import { GLTFLoader } from 'https://solraczo.github.io/solarandroid/libs/GLTFLoader.js';
 import { RGBELoader } from 'https://solraczo.github.io/solarandroid/libs/RGBELoader.js';
 
+
 let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
 const animationSpeed = 0.75;
-let gltfModel = null; // Guardamos el modelo sin agregarlo a la escena
+
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -21,6 +22,21 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.5;
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
+
+// Verificar soporte de WebXR
+if ('xr' in navigator) {
+    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+        if (supported) {
+            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+        } else {
+            alert('WebXR AR no es soportado en este dispositivo.');
+        }
+    }).catch((error) => {
+        console.error('Error al verificar soporte de WebXR AR:', error);
+    });
+} else {
+    alert('WebXR no está disponible en este navegador.');
+}
 
 // Iluminación
 const light = new THREE.PointLight(0xffffff, 0.2);
@@ -44,16 +60,17 @@ rgbeLoader.load(
     (error) => console.error('Error al cargar el HDRI:', error)
 );
 
-// Cargar el modelo GLTF pero NO lo agregamos a la escena de inmediato
+// Cargar el modelo GLTF y activar todas sus animaciones en loop
+const gltfLoader = new GLTFLoader();
 gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
-        gltfModel = gltf.scene;
-        gltfModel.scale.set(0.5, 0.5, 0.5);
-        gltfModel.position.set(0, 0, 0);
+        const model = gltf.scene;
+        model.scale.set(0.5, 0.5, 0.5);
+        model.position.set(0, 0, 0);
+        scene.add(model);
 
-        // Preparamos las animaciones sin agregarlas a la escena
-        mixerGLTF = new THREE.AnimationMixer(gltfModel);
+        mixerGLTF = new THREE.AnimationMixer(model);
         gltf.animations.forEach((clip) => {
             const action = mixerGLTF.clipAction(clip);
             action.setLoop(THREE.LoopRepeat);
@@ -64,38 +81,11 @@ gltfLoader.load(
         });
 
         modelLoaded = true;
-        console.log('Modelo cargado, pero no agregado aún.');
+        console.log('Animaciones GLTF disponibles y activadas en loop:', Object.keys(actionsGLTF));
     },
     (xhr) => console.log('GLTF loaded:', (xhr.loaded / xhr.total) * 100 + '%'),
     (error) => console.error('Error al cargar el modelo GLTF:', error)
 );
-
-// Verificar soporte de WebXR y configurar el botón AR
-if ('xr' in navigator) {
-    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-        if (supported) {
-            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
-            document.body.appendChild(arButton);
-            console.log("Botón AR agregado");
-
-            arButton.addEventListener('sessionstart', () => {
-                console.log("Sesión AR iniciada, agregando el modelo a la escena.");
-                if (gltfModel) scene.add(gltfModel);
-            });
-
-            arButton.addEventListener('sessionend', () => {
-                console.log("Sesión AR finalizada, eliminando el modelo de la escena.");
-                if (gltfModel) scene.remove(gltfModel);
-            });
-        } else {
-            alert('WebXR AR no es soportado en este dispositivo.');
-        }
-    }).catch((error) => {
-        console.error('Error al verificar soporte de WebXR AR:', error);
-    });
-} else {
-    alert('WebXR no está disponible en este navegador.');
-}
 
 // Animar cada frame
 renderer.setAnimationLoop((timestamp, frame) => {
