@@ -29,12 +29,10 @@ if ('xr' in navigator) {
             document.body.appendChild(arButton);
 
             // Detectar el inicio de la sesión de AR
-            arButton.addEventListener('click', () => {
-                renderer.xr.addEventListener('sessionstart', () => {
-                    if (model) {
-                        model.visible = true;
-                    }
-                });
+            renderer.xr.addEventListener('sessionstart', () => {
+                if (model) {
+                    model.visible = true;
+                }
             });
         } else {
             alert('WebXR AR no es soportado en este dispositivo.');
