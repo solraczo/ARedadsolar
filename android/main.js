@@ -80,7 +80,7 @@ gltfLoader.load(
     'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_13.gltf',
     (gltf) => {
         model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5);
+        model.scale.set(0.2, 0.2, 0.2);
         model.position.set(0, 0, 0);
         model.visible = false; // Ocultar el modelo inicialmente
         scene.add(model);
