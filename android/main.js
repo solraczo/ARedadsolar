@@ -77,7 +77,7 @@ rgbeLoader.load(
 const gltfLoader = new GLTFLoader();
 let model;
 gltfLoader.load(
-    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_15.gltf',
+    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_17.gltf',
     (gltf) => {
         model = gltf.scene;
         model.scale.set(0.2, 0.2, 0.2);
