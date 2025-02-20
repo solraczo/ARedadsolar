@@ -7,7 +7,7 @@ let mixerGLTF;
 let actionsGLTF = {};
 let clock = new THREE.Clock();
 let modelLoaded = false;
-const animationSpeed = 0.75;
+const animationSpeed = 1;
 
 // Escena, cámara y renderizador
 const scene = new THREE.Scene();
@@ -77,10 +77,10 @@ rgbeLoader.load(
 const gltfLoader = new GLTFLoader();
 let model;
 gltfLoader.load(
-    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_17.gltf',
+    'https://solraczo.github.io/ARedadsolar/android/models/edadsolar_18.gltf',
     (gltf) => {
         model = gltf.scene;
-        model.scale.set(0.2, 0.2, 0.2);
+        model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
         model.visible = false; // Ocultar el modelo inicialmente
         scene.add(model);
