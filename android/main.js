@@ -25,7 +25,9 @@ document.body.appendChild(renderer.domElement);
 if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
+            // Crear el botón AR y agregar una clase personalizada
             const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+            arButton.classList.add('custom-ar-button'); // Agregar una clase personalizada
             document.body.appendChild(arButton);
 
             // Detectar el inicio de la sesión de AR
@@ -50,6 +52,7 @@ if ('xr' in navigator) {
 } else {
     alert('WebXR no está disponible en este navegador.');
 }
+
 
 // Iluminación
 const light = new THREE.PointLight(0xffffff, 0.2);
