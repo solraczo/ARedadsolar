@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Detecta si el usuario está en un iPhone o iPad
     if (/iPhone|iPad/i.test(userAgent)) {
         // Redirige automáticamente al modelo en AR
-        window.location.href = "edadsolar_8.usdz";
+        window.location.href = "edadsolar_9.usdz";
     } else {
         alert("Esta experiencia de AR solo está disponible en iPhone o iPad.");
     }
